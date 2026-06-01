@@ -1,14 +1,14 @@
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 
 import psycopg
 from psycopg.rows import dict_row
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 
 STATUS_OPTIONS = [
     "Investigation to continue",
@@ -28,6 +28,10 @@ def using_postgres():
 
 
 def get_db_connection():
+    """
+    On Render, the app uses PostgreSQL through DATABASE_URL.
+    Locally, if DATABASE_URL is not set, it uses SQLite with tickets.db.
+    """
     if using_postgres():
         return psycopg.connect(
             DATABASE_URL,
@@ -57,10 +61,25 @@ def init_db():
                 status TEXT NOT NULL,
                 notes TEXT,
                 completed INTEGER NOT NULL DEFAULT 0,
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
+
+        cur.execute(
+            """
+            ALTER TABLE entries
+            ADD COLUMN IF NOT EXISTS completed INTEGER NOT NULL DEFAULT 0
+            """
+        )
+
+        cur.execute(
+            """
+            ALTER TABLE entries
+            ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            """
+        )
+
     else:
         cur.execute(
             """
@@ -90,6 +109,14 @@ def init_db():
                 """
             )
 
+        if "created_at" not in column_names:
+            cur.execute(
+                """
+                ALTER TABLE entries
+                ADD COLUMN created_at TEXT
+                """
+            )
+
     conn.commit()
     cur.close()
     conn.close()
@@ -98,19 +125,21 @@ def init_db():
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        date = request.form.get("date")
-        name = request.form.get("name")
-        location = request.form.get("location")
-        ticket = request.form.get("ticket")
-        priority = request.form.get("priority")
-        status = request.form.get("status")
-        notes = request.form.get("notes")
+        date = request.form.get("date", "").strip()
+        name = request.form.get("name", "").strip()
+        location = request.form.get("location", "").strip()
+        ticket = request.form.get("ticket", "").strip()
+        priority = request.form.get("priority", "").strip()
+        status = request.form.get("status", "").strip()
+        notes = request.form.get("notes", "").strip()
 
         if location not in LOCATION_OPTIONS:
             location = "Bogota"
 
         if status not in STATUS_OPTIONS:
             status = "Other"
+
+        created_at = datetime.now(timezone.utc)
 
         conn = get_db_connection()
         cur = conn.cursor()
@@ -140,7 +169,7 @@ def index():
                     status,
                     notes,
                     0,
-                    datetime.utcnow(),
+                    created_at,
                 ),
             )
         else:
@@ -168,7 +197,7 @@ def index():
                     status,
                     notes,
                     0,
-                    datetime.utcnow().isoformat(),
+                    created_at.isoformat(),
                 ),
             )
 
@@ -176,7 +205,7 @@ def index():
         cur.close()
         conn.close()
 
-        return redirect(url_for("index"))
+        return redirect("/", code=303)
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -186,7 +215,7 @@ def index():
             """
             SELECT *
             FROM entries
-            ORDER BY created_at DESC
+            ORDER BY created_at DESC, id DESC
             """
         )
     else:
@@ -194,7 +223,7 @@ def index():
             """
             SELECT *
             FROM entries
-            ORDER BY datetime(created_at) DESC
+            ORDER BY datetime(created_at) DESC, id DESC
             """
         )
 
@@ -239,7 +268,7 @@ def complete_entry(entry_id):
     cur.close()
     conn.close()
 
-    return redirect(url_for("index"))
+    return redirect("/", code=303)
 
 
 @app.route("/delete/<int:entry_id>", methods=["POST"])
@@ -248,20 +277,30 @@ def delete_entry(entry_id):
     cur = conn.cursor()
 
     if using_postgres():
-        cur.execute("DELETE FROM entries WHERE id = %s", (entry_id,))
+        cur.execute(
+            """
+            DELETE FROM entries
+            WHERE id = %s
+            """,
+            (entry_id,),
+        )
     else:
-        cur.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
+        cur.execute(
+            """
+            DELETE FROM entries
+            WHERE id = ?
+            """,
+            (entry_id,),
+        )
 
     conn.commit()
     cur.close()
     conn.close()
 
-    return redirect(url_for("index"))
-
-
-if __name__ == "__main__":
-    init_db()
-    app.run(debug=True)
+    return redirect("/", code=303)
 
 
 init_db()
+
+if __name__ == "__main__":
+    app.run(debug=True)
