@@ -235,7 +235,7 @@
 
         .completed-label {
             color: var(--success-text);
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .empty-message {
@@ -307,7 +307,7 @@
 <div class="container">
     <h1>Moneycorp tickets - Handover Form</h1>
 
-    <form method="POST" class="entry-form">
+    <form method="POST" action="{{ url_for('index') }}" class="entry-form">
         <div class="form-grid">
             <div>
                 <label for="date">Date</label>
