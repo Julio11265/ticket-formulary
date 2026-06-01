@@ -8,6 +8,7 @@
             --bg: #f8f9fb;
             --card: #ffffff;
             --text: #363636;
+            --text2: #4f46e5;
             --muted: #64748b;
             --border: #e2e8f0;
             --primary: #4f46e5;
@@ -63,7 +64,7 @@
             font-size: 22px;
             margin: 36px 0 18px;
             font-weight: 700;
-            color: var(--text);
+            color: var(--text2);
         }
 
         form.entry-form {
@@ -306,7 +307,7 @@
 <body>
 <div class="container">
     <h1>Moneycorp tickets - Handover Form</h1>
-
+    <h2>Add a new handover entry</h2>
     <form method="POST" action="/" class="entry-form">
         <div class="form-grid">
             <div>
@@ -364,7 +365,7 @@
         <button type="submit" class="add-button">Add Entry</button>
     </form>
 
-    <h2>Entries</h2>
+    <h2>Existing handover entries</h2>
 
     {% if entries %}
         <table>
