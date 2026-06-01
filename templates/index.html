@@ -370,6 +370,7 @@
         <table>
             <thead>
             <tr>
+                <th>Record #</th>
                 <th>Date</th>
                 <th>Name</th>
                 <th>Location</th>
@@ -383,6 +384,7 @@
             <tbody>
             {% for entry in entries %}
                 <tr class="{% if entry.completed == 1 %}completed-row{% endif %}">
+                    <td>{{ loop.index }}</td>
                     <td>{{ entry.date }}</td>
                     <td>{{ entry.name }}</td>
                     <td>{{ entry.location }}</td>
