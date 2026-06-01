@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Handover Formulary</title>
+    <style>
+        :root {
+            --bg: #f8f9fb;
+            --card: #ffffff;
+            --text: #363636;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #dcfce7;
+            --success-border: #00ff5e9a;
+            --success-text: #166534;
+            --danger: #ff5757da;
+            --danger-hover: #ff5757da;
+            --shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            min-height: 100%;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 28px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background:
+                linear-gradient(90deg, rgba(79, 70, 229, 0.03), transparent 30%, rgba(79, 70, 229, 0.03)),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1250px;
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            margin: 0 0 28px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 22px;
+            margin: 36px 0 18px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        form.entry-form {
+            background: var(--card);
+            padding: 24px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        label {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #ffffff;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .full-width {
+            grid-column: span 3;
+        }
+
+        button {
+            padding: 9px 14px;
+            border: none;
+            color: white;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .add-button {
+            margin-top: 18px;
+            padding: 11px 22px;
+            background: var(--primary);
+        }
+
+        .add-button:hover {
+            background: var(--primary-hover);
+        }
+
+        .complete-button {
+            background: #16a34a;
+        }
+
+        .complete-button:hover {
+            background: #15803d;
+        }
+
+        .delete-button {
+            background: var(--danger);
+        }
+
+        .delete-button:hover {
+            background: var(--danger-hover);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .action-form {
+            margin: 0;
+            padding: 0;
+            box-shadow: none;
+            background: transparent;
+            border: none;
+        }
+
+        .center-label {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        th,
+        td {
+            padding: 12px 14px;
+            vertical-align: top;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px;
+        }
+
+        th {
+            background: #4f46e5;
+            color: #ffffff;
+            font-weight: 700;
+            border-bottom: 2px solid #94a3b8;
+        }
+
+        td {
+            color: var(--text);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        tr.completed-row {
+            background: var(--success) !important;
+        }
+
+        tr.completed-row:hover {
+            background: #bbf7d0 !important;
+        }
+
+        tr.completed-row td {
+            border-bottom-color: var(--success-border);
+        }
+
+        .completed-label {
+            color: var(--success-text);
+            font-weight: 700;
+        }
+
+        .empty-message {
+            background: var(--card);
+            padding: 22px;
+            border-radius: 10px;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .app-footer {
+            margin-top: auto;
+            padding: 28px 10px 0;
+            text-align: center;
+            color: rgba(100, 116, 139, 0.55);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .app-footer p {
+            margin: 0;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding: 16px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: span 1;
+            }
+
+            table {
+                font-size: 13px;
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            th,
+            td {
+                font-size: 13px;
+                padding: 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .app-footer {
+                font-size: 8px;
+                padding-top: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Moneycorp tickets - Handover Form</h1>
+
+    <form method="POST" class="entry-form">
+        <div class="form-grid">
+            <div>
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+
+            <div>
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+
+            <div>
+                <label for="location">Location</label>
+                <select id="location" name="location" required>
+                    <option value="">Select location</option>
+                    {% for location in location_options %}
+                        <option value="{{ location }}">{{ location }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="ticket">Ticket to be handed over</label>
+                <input type="text" id="ticket" name="ticket" required>
+            </div>
+
+            <div>
+                <label for="priority">Ticket priority</label>
+                <select id="priority" name="priority" required>
+                    <option value="">Select priority</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="status">Current status</label>
+                <select id="status" name="status" required>
+                    <option value="">Select status</option>
+                    {% for status in status_options %}
+                        <option value="{{ status }}">{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="full-width">
+                <label for="notes" class="center-label">Next steps / Notes</label>
+                <textarea id="notes" name="notes"></textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="add-button">Add Entry</button>
+    </form>
+
+    <h2>Entries</h2>
+
+    {% if entries %}
+        <table>
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Ticket</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Next Steps / Notes</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for entry in entries %}
+                <tr class="{% if entry.completed == 1 %}completed-row{% endif %}">
+                    <td>{{ entry.date }}</td>
+                    <td>{{ entry.name }}</td>
+                    <td>{{ entry.location }}</td>
+                    <td>{{ entry.ticket }}</td>
+                    <td>{{ entry.priority }}</td>
+                    <td>{{ entry.status }}</td>
+                    <td>{{ entry.notes or "-" }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            {% if entry.completed == 0 %}
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('complete_entry', entry_id=entry.id) }}"
+                                    class="action-form"
+                                    onsubmit="return confirm('Mark this entry as completed?');"
+                                >
+                                    <button type="submit" class="complete-button">Mark as completed</button>
+                                </form>
+                            {% else %}
+                                <span class="completed-label">Handed over!</span>
+                            {% endif %}
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('delete_entry', entry_id=entry.id) }}"
+                                class="action-form"
+                                onsubmit="return confirm('Are you sure you want to delete this entry?');"
+                            >
+                                <button type="submit" class="delete-button">Delete entry</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-message">
+            No entries yet.
+        </div>
+    {% endif %}
+
+    <footer class="app-footer">
+        <p>
+            Moneycorp Ticket Handover Formulary · Version 1.0.0 · Created by Applications management team · Internal use only
+        </p>
+    </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ticket-formulary
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: DATABASE_PATH
+        value: /var/data/tickets.db
+    disk:
+      name: ticket-formulary-data
+      mountPath: /var/data
+      sizeGB: 1
