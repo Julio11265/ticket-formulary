@@ -1,11 +1,14 @@
 import os
 import sqlite3
 from datetime import datetime
+
+import psycopg2
+import psycopg2.extras
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
-DATABASE_PATH = os.environ.get("DATABASE_PATH", "tickets.db")
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 STATUS_OPTIONS = [
     "Investigation to continue",
@@ -20,46 +23,79 @@ LOCATION_OPTIONS = [
 ]
 
 
+def using_postgres():
+    return bool(DATABASE_URL)
+
+
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE_PATH)
+    """
+    In Render, this will use PostgreSQL through DATABASE_URL.
+    Locally, if DATABASE_URL is not set, it falls back to SQLite.
+    """
+    if using_postgres():
+        return psycopg2.connect(
+            DATABASE_URL,
+            cursor_factory=psycopg2.extras.RealDictCursor,
+            sslmode="require",
+        )
+
+    conn = sqlite3.connect("tickets.db")
     conn.row_factory = sqlite3.Row
     return conn
 
 
-def column_exists(conn, table_name, column_name):
-    columns = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
-    return any(column["name"] == column_name for column in columns)
-
-
 def init_db():
     conn = get_db_connection()
+    cur = conn.cursor()
 
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS entries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            name TEXT NOT NULL,
-            location TEXT NOT NULL,
-            ticket TEXT NOT NULL,
-            priority TEXT NOT NULL,
-            status TEXT NOT NULL,
-            notes TEXT,
-            completed INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-
-    if not column_exists(conn, "entries", "completed"):
-        conn.execute(
+    if using_postgres():
+        cur.execute(
             """
-            ALTER TABLE entries
-            ADD COLUMN completed INTEGER NOT NULL DEFAULT 0
+            CREATE TABLE IF NOT EXISTS entries (
+                id SERIAL PRIMARY KEY,
+                date TEXT NOT NULL,
+                name TEXT NOT NULL,
+                location TEXT NOT NULL,
+                ticket TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                status TEXT NOT NULL,
+                notes TEXT,
+                completed INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
             """
         )
+    else:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS entries (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                name TEXT NOT NULL,
+                location TEXT NOT NULL,
+                ticket TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                status TEXT NOT NULL,
+                notes TEXT,
+                completed INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+
+        columns = cur.execute("PRAGMA table_info(entries)").fetchall()
+        column_names = [column["name"] for column in columns]
+
+        if "completed" not in column_names:
+            cur.execute(
+                """
+                ALTER TABLE entries
+                ADD COLUMN completed INTEGER NOT NULL DEFAULT 0
+                """
+            )
 
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -81,46 +117,94 @@ def index():
             status = "Other"
 
         conn = get_db_connection()
-        conn.execute(
-            """
-            INSERT INTO entries (
-                date,
-                name,
-                location,
-                ticket,
-                priority,
-                status,
-                notes,
-                completed,
-                created_at
+        cur = conn.cursor()
+
+        if using_postgres():
+            cur.execute(
+                """
+                INSERT INTO entries (
+                    date,
+                    name,
+                    location,
+                    ticket,
+                    priority,
+                    status,
+                    notes,
+                    completed,
+                    created_at
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    date,
+                    name,
+                    location,
+                    ticket,
+                    priority,
+                    status,
+                    notes,
+                    0,
+                    datetime.utcnow(),
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                date,
-                name,
-                location,
-                ticket,
-                priority,
-                status,
-                notes,
-                0,
-                datetime.utcnow().isoformat(),
-            ),
-        )
+        else:
+            cur.execute(
+                """
+                INSERT INTO entries (
+                    date,
+                    name,
+                    location,
+                    ticket,
+                    priority,
+                    status,
+                    notes,
+                    completed,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    date,
+                    name,
+                    location,
+                    ticket,
+                    priority,
+                    status,
+                    notes,
+                    0,
+                    datetime.utcnow().isoformat(),
+                ),
+            )
+
         conn.commit()
+        cur.close()
         conn.close()
 
         return redirect(url_for("index"))
 
     conn = get_db_connection()
-    entries = conn.execute(
-        """
-        SELECT *
-        FROM entries
-        ORDER BY datetime(created_at) DESC
-        """
-    ).fetchall()
+    cur = conn.cursor()
+
+    if using_postgres():
+        cur.execute(
+            """
+            SELECT *
+            FROM entries
+            ORDER BY created_at DESC
+            """
+        )
+    else:
+        cur.execute(
+            """
+            SELECT *
+            FROM entries
+            ORDER BY datetime(created_at) DESC
+            """
+        )
+
+    entries = cur.fetchall()
+
+    cur.close()
     conn.close()
 
     return render_template(
@@ -134,15 +218,29 @@ def index():
 @app.route("/complete/<int:entry_id>", methods=["POST"])
 def complete_entry(entry_id):
     conn = get_db_connection()
-    conn.execute(
-        """
-        UPDATE entries
-        SET completed = 1
-        WHERE id = ?
-        """,
-        (entry_id,),
-    )
+    cur = conn.cursor()
+
+    if using_postgres():
+        cur.execute(
+            """
+            UPDATE entries
+            SET completed = 1
+            WHERE id = %s
+            """,
+            (entry_id,),
+        )
+    else:
+        cur.execute(
+            """
+            UPDATE entries
+            SET completed = 1
+            WHERE id = ?
+            """,
+            (entry_id,),
+        )
+
     conn.commit()
+    cur.close()
     conn.close()
 
     return redirect(url_for("index"))
@@ -151,8 +249,15 @@ def complete_entry(entry_id):
 @app.route("/delete/<int:entry_id>", methods=["POST"])
 def delete_entry(entry_id):
     conn = get_db_connection()
-    conn.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
+    cur = conn.cursor()
+
+    if using_postgres():
+        cur.execute("DELETE FROM entries WHERE id = %s", (entry_id,))
+    else:
+        cur.execute("DELETE FROM entries WHERE id = ?", (entry_id,))
+
     conn.commit()
+    cur.close()
     conn.close()
 
     return redirect(url_for("index"))
