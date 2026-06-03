@@ -8,17 +8,18 @@
             --bg: #f8f9fb;
             --card: #ffffff;
             --text: #363636;
-            --text2: #4f46e5;
+            --text2: #3D5A80;
+            --tableh: #3D5A80;
             --muted: #64748b;
             --border: #e2e8f0;
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --success: #dcfce7;
-            --success-border: #00ff5e9a;
+            --primary: #3D5A80;
+            --primary-hover: #2F4761;
+            --success: #ffffff;
+            --success-border: #ffffff;
             --success-text: #166534;
             --danger: #ff5757da;
             --danger-hover: #ff5757da;
-            --shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+            --shadow: 0 2px 8px #0f172a14;
         }
 
         * {
@@ -161,10 +162,38 @@
             background: var(--danger-hover);
         }
 
+        .icon-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            font-size: 18px;
+            line-height: 1;
+            font-weight: 700;
+        }
+
         .action-buttons {
             display: flex;
-            gap: 8px;
+            flex-wrap: nowrap;
+            gap: 6px;
             align-items: center;
+            justify-content: center;
+        }
+
+        .action-buttons--completed {
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            min-height: 32px;
+        }
+
+        .action-cell {
+            vertical-align: middle;
+            width: 1%;
+            padding-left: 10px;
+            padding-right: 10px;
         }
 
         .action-form {
@@ -179,28 +208,59 @@
             text-align: center;
         }
 
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+        }
+
         table {
             width: 100%;
+            min-width: 1050px;
             border-collapse: separate;
             border-spacing: 0;
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 10px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
+            box-shadow: none;
         }
 
-        th,
-        td {
+        .entries-table th,
+        .entries-table td {
             padding: 12px 14px;
             vertical-align: top;
             text-align: left;
             border-bottom: 1px solid var(--border);
             font-size: 15px;
+            white-space: nowrap;
+        }
+
+        .entries-table .cell-notes {
+            white-space: normal;
+            word-break: break-word;
+            min-width: 320px;
+            width: 38%;
+        }
+
+        .entries-table th.col-notes {
+            width: 38%;
+        }
+
+        .entries-table col.col-notes {
+            width: 38%;
+        }
+
+        .entries-table col.col-action {
+            width: 72px;
+        }
+
+        .entries-table th.col-action,
+        .entries-table td.action-cell {
+            text-align: center;
         }
 
         th {
-            background: #4f46e5;
+            background: var(--tableh);
             color: #ffffff;
             font-weight: 700;
             border-bottom: 2px solid #94a3b8;
@@ -237,6 +297,26 @@
         .completed-label {
             color: var(--success-text);
             font-weight: 700;
+        }
+
+        .priority {
+            font-weight: 700;
+        }
+
+        .priority-critical {
+            color: #dc2626;
+        }
+
+        .priority-high {
+            color: #ea580c;
+        }
+
+        .priority-medium {
+            color: #2563eb;
+        }
+
+        .priority-low {
+            color: #16a34a;
         }
 
         .empty-message {
@@ -281,20 +361,18 @@
 
             table {
                 font-size: 13px;
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
+                min-width: 900px;
             }
 
-            th,
-            td {
+            .entries-table th,
+            .entries-table td {
                 font-size: 13px;
                 padding: 10px;
             }
 
             .action-buttons {
-                flex-direction: column;
-                align-items: stretch;
+                flex-direction: row;
+                flex-wrap: nowrap;
             }
 
             .app-footer {
@@ -368,7 +446,19 @@
     <h2>Existing handover entries</h2>
 
     {% if entries %}
-        <table>
+        <div class="table-wrapper">
+        <table class="entries-table">
+            <colgroup>
+                <col>
+                <col>
+                <col>
+                <col>
+                <col>
+                <col>
+                <col>
+                <col class="col-notes">
+                <col class="col-action">
+            </colgroup>
             <thead>
             <tr>
                 <th>#</th>
@@ -378,23 +468,25 @@
                 <th>Ticket</th>
                 <th>Priority</th>
                 <th>Status</th>
-                <th>Next Steps / Notes</th>
-                <th>Action</th>
+                <th class="col-notes">Next Steps / Notes</th>
+                <th class="col-action">Action</th>
             </tr>
             </thead>
             <tbody>
             {% for entry in entries %}
                 <tr class="{% if entry.completed == 1 %}completed-row{% endif %}">
-                    <td>{{ loop.index }}</td>
+                    <td>{{ loop.revindex }}</td>
                     <td>{{ entry.date }}</td>
                     <td>{{ entry.name }}</td>
                     <td>{{ entry.location }}</td>
                     <td>{{ entry.ticket }}</td>
-                    <td>{{ entry.priority }}</td>
-                    <td>{{ entry.status }}</td>
-                    <td>{{ entry.notes or "-" }}</td>
                     <td>
-                        <div class="action-buttons">
+                        <span class="priority priority-{{ entry.priority|lower }}">{{ entry.priority }}</span>
+                    </td>
+                    <td>{{ entry.status }}</td>
+                    <td class="cell-notes">{{ entry.notes or "-" }}</td>
+                    <td class="action-cell">
+                        <div class="action-buttons{% if entry.completed == 1 %} action-buttons--completed{% endif %}">
                             {% if entry.completed == 0 %}
                                 <form
                                     method="POST"
@@ -402,26 +494,39 @@
                                     class="action-form"
                                     onsubmit="return confirm('Mark this entry as completed?');"
                                 >
-                                    <button type="submit" class="complete-button">Mark as completed</button>
+                                    <button
+                                        type="submit"
+                                        class="icon-button complete-button"
+                                        title="Mark as completed"
+                                        aria-label="Mark as completed"
+                                    >✓</button>
                                 </form>
                             {% else %}
                                 <span class="completed-label">Handed over!</span>
                             {% endif %}
 
-                            <form
-                                method="POST"
-                                action="{{ url_for('delete_entry', entry_id=entry.id) }}"
-                                class="action-form"
-                                onsubmit="return confirm('Are you sure you want to delete this entry?');"
-                            >
-                                <button type="submit" class="delete-button">Delete entry</button>
-                            </form>
+                            {% if entry.completed == 0 %}
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('delete_entry', entry_id=entry.id) }}"
+                                    class="action-form"
+                                    onsubmit="return confirm('Are you sure you want to delete this entry?');"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="icon-button delete-button"
+                                        title="Delete entry"
+                                        aria-label="Delete entry"
+                                    >✕</button>
+                                </form>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <div class="empty-message">
             No entries yet.

@@ -280,7 +280,7 @@ def delete_entry(entry_id):
         cur.execute(
             """
             DELETE FROM entries
-            WHERE id = %s
+            WHERE id = %s AND completed = 0
             """,
             (entry_id,),
         )
@@ -288,7 +288,7 @@ def delete_entry(entry_id):
         cur.execute(
             """
             DELETE FROM entries
-            WHERE id = ?
+            WHERE id = ? AND completed = 0
             """,
             (entry_id,),
         )
