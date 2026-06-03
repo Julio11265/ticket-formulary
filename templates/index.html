@@ -166,18 +166,19 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
+            width: 24px;
+            height: 24px;
             padding: 0;
-            font-size: 18px;
+            font-size: 14px;
             line-height: 1;
             font-weight: 700;
+            border-radius: 5px;
         }
 
         .action-buttons {
             display: flex;
             flex-wrap: nowrap;
-            gap: 6px;
+            gap: 4px;
             align-items: center;
             justify-content: center;
         }
@@ -186,7 +187,7 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            min-height: 32px;
+            min-height: 24px;
         }
 
         .action-cell {
@@ -251,7 +252,7 @@
         }
 
         .entries-table col.col-action {
-            width: 72px;
+            width: 56px;
         }
 
         .entries-table th.col-action,
@@ -505,21 +506,19 @@
                                 <span class="completed-label">Handed over!</span>
                             {% endif %}
 
-                            {% if entry.completed == 0 %}
-                                <form
-                                    method="POST"
-                                    action="{{ url_for('delete_entry', entry_id=entry.id) }}"
-                                    class="action-form"
-                                    onsubmit="return confirm('Are you sure you want to delete this entry?');"
-                                >
-                                    <button
-                                        type="submit"
-                                        class="icon-button delete-button"
-                                        title="Delete entry"
-                                        aria-label="Delete entry"
-                                    >✕</button>
-                                </form>
-                            {% endif %}
+                            <form
+                                method="POST"
+                                action="{{ url_for('delete_entry', entry_id=entry.id) }}"
+                                class="action-form"
+                                onsubmit="return confirm('Are you sure you want to delete this entry?');"
+                            >
+                                <button
+                                    type="submit"
+                                    class="icon-button delete-button"
+                                    title="Delete entry"
+                                    aria-label="Delete entry"
+                                >✕</button>
+                            </form>
                         </div>
                     </td>
                 </tr>
